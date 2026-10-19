@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestión de Archivos</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    header {
+      background: #1e293b;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #334155;
+    }
+    header h1 { font-size: 1.25rem; color: #38bdf8; }
+    #btn-logout {
+      display: none;
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    /* Login */
+    #login-screen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: calc(100vh - 60px);
+    }
+    .login-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+    .login-box h2 { margin-bottom: 1.5rem; color: #94a3b8; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .login-box input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+    .login-box button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .login-box button:hover { background: #7dd3fc; }
+    #login-error { color: #f87171; margin-top: 0.75rem; font-size: 0.9rem; }
+
+    /* Main */
+    #main-screen { display: none; padding: 2rem; max-width: 960px; margin: 0 auto; }
+
+    /* Upload */
+    .upload-box {
+      background: #1e293b;
+      border: 2px dashed #334155;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .upload-box h2 { color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    .upload-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end; }
+    .upload-row input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+    }
+    .upload-row input[type="file"] { display: none; }
+    .btn-file {
+      padding: 0.65rem 1.25rem;
+      background: #334155;
+      color: #e2e8f0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+    .btn-file:hover { background: #475569; }
+    #file-name { color: #64748b; font-size: 0.85rem; margin-top: 0.5rem; }
+    #btn-upload {
+      padding: 0.65rem 1.5rem;
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    #btn-upload:hover { background: #16a34a; }
+    #btn-upload:disabled { background: #475569; cursor: not-allowed; }
+    #upload-status { margin-top: 0.75rem; font-size: 0.9rem; }
+
+    /* Files list */
+    .files-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .files-header h2 { color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .file-count { background: #334155; color: #94a3b8; font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 999px; }
+
+    .file-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+      transition: border-color 0.15s;
+    }
+    .file-card:hover { border-color: #475569; }
+    .file-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+    .file-icon.pdf { background: #fecaca; color: #dc2626; }
+    .file-icon.pptx, .file-icon.ppt { background: #fed7aa; color: #ea580c; }
+    .file-icon.docx, .file-icon.doc { background: #bfdbfe; color: #2563eb; }
+    .file-icon.xlsx, .file-icon.xls { background: #bbf7d0; color: #16a34a; }
+    .file-icon.html, .file-icon.htm { background: #fde68a; color: #d97706; }
+    .file-icon.other { background: #e2e8f0; color: #475569; }
+
+    .file-info { flex: 1; min-width: 0; }
+    .file-title { font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta { font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; }
+
+    .file-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .btn-open {
+      padding: 0.45rem 1rem;
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .btn-open:hover { background: #7dd3fc; }
+    .btn-delete {
+      padding: 0.45rem 0.75rem;
+      background: transparent;
+      color: #ef4444;
+      border: 1px solid #ef4444;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn-delete:hover { background: #ef4444; color: white; }
+
+    #empty-state { text-align: center; color: #475569; padding: 3rem; }
+    #loading { text-align: center; color: #64748b; padding: 2rem; }
+
+    .progress-bar {
+      height: 4px;
+      background: #334155;
+      border-radius: 999px;
+      margin-top: 0.75rem;
+      display: none;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #38bdf8;
+      border-radius: 999px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📁 Gestión de Archivos</h1>
+  <button id="btn-logout" onclick="logout()">Cerrar sesión</button>
+</header>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-box">
+    <h2>Acceso al sistema</h2>
+    <input type="password" id="input-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter') doLogin()" />
+    <button onclick="doLogin()">Entrar</button>
+    <p id="login-error"></p>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main-screen">
+  <!-- Upload -->
+  <div class="upload-box">
+    <h2>Subir archivo</h2>
+    <div class="upload-row">
+      <input type="text" id="input-titulo" placeholder="Título (opcional)" />
+      <button class="btn-file" onclick="document.getElementById('input-file').click()">Elegir archivo</button>
+      <input type="file" id="input-file" accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.txt,.zip,.html,.htm,.png,.jpg,.jpeg,.gif,.mp4,.mp3" onchange="onFileSelected()" />
+      <button id="btn-upload" onclick="uploadFile()" disabled>Subir</button>
+    </div>
+    <p id="file-name">Ningún archivo seleccionado</p>
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <p id="upload-status"></p>
+  </div>
+
+  <!-- Files -->
+  <div class="files-header">
+    <h2>Archivos</h2>
+    <span class="file-count" id="file-count">0</span>
+  </div>
+  <div id="loading">Cargando...</div>
+  <div id="files-list"></div>
+  <div id="empty-state" style="display:none">No hay archivos subidos aún.</div>
+</div>
+
+<script>
+  let token = localStorage.getItem('admin_token') || '';
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function iconClass(tipo) {
+    const t = (tipo || '').toLowerCase();
+    if (['pdf'].includes(t)) return 'pdf';
+    if (['ppt', 'pptx'].includes(t)) return 'pptx';
+    if (['doc', 'docx'].includes(t)) return 'docx';
+    if (['xls', 'xlsx'].includes(t)) return 'xlsx';
+    if (['html', 'htm'].includes(t)) return 'html';
+    return 'other';
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function doLogin() {
+    const pw = document.getElementById('input-password').value;
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      token = data.token;
+      localStorage.setItem('admin_token', token);
+      showMain();
+    } else {
+      document.getElementById('login-error').textContent = data.error;
+    }
+  }
+
+  function logout() {
+    token = '';
+    localStorage.removeItem('admin_token');
+    document.getElementById('main-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('btn-logout').style.display = 'none';
+    document.getElementById('input-password').value = '';
+  }
+
+  function showMain() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-screen').style.display = 'block';
+    document.getElementById('btn-logout').style.display = 'inline-block';
+    loadFiles();
+  }
+
+  function onFileSelected() {
+    const file = document.getElementById('input-file').files[0];
+    if (file) {
+      document.getElementById('file-name').textContent = file.name + ' (' + formatSize(file.size) + ')';
+      document.getElementById('btn-upload').disabled = false;
+    }
+  }
+
+  async function uploadFile() {
+    const file = document.getElementById('input-file').files[0];
+    if (!file) return;
+    const titulo = document.getElementById('input-titulo').value;
+
+    const formData = new FormData();
+    formData.append('archivo', file);
+    formData.append('titulo', titulo || file.name);
+
+    document.getElementById('btn-upload').disabled = true;
+    document.getElementById('upload-status').textContent = 'Subiendo...';
+    document.getElementById('progress-bar').style.display = 'block';
+    document.getElementById('progress-fill').style.width = '30%';
+
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      body: formData
+    });
+
+    document.getElementById('progress-fill').style.width = '100%';
+    const data = await res.json();
+
+    if (data.ok) {
+      document.getElementById('upload-status').style.color = '#22c55e';
+      document.getElementById('upload-status').textContent = '¡Archivo subido!';
+      document.getElementById('input-file').value = '';
+      document.getElementById('input-titulo').value = '';
+      document.getElementById('file-name').textContent = 'Ningún archivo seleccionado';
+      document.getElementById('btn-upload').disabled = true;
+      setTimeout(() => {
+        document.getElementById('progress-bar').style.display = 'none';
+        document.getElementById('progress-fill').style.width = '0%';
+        document.getElementById('upload-status').textContent = '';
+      }, 2000);
+      loadFiles();
+    } else {
+      document.getElementById('upload-status').style.color = '#ef4444';
+      document.getElementById('upload-status').textContent = 'Error: ' + data.error;
+      document.getElementById('btn-upload').disabled = false;
+    }
+  }
+
+  async function loadFiles() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('files-list').innerHTML = '';
+    document.getElementById('empty-state').style.display = 'none';
+
+    const res = await fetch('/api/files');
+    const files = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('file-count').textContent = files.length;
+
+    if (!files.length) {
+      document.getElementById('empty-state').style.display = 'block';
+      return;
+    }
+
+    const list = document.getElementById('files-list');
+    files.forEach(f => {
+      const tipo = (f.tipo || 'FILE').toUpperCase();
+      const card = document.createElement('div');
+      card.className = 'file-card';
+      card.innerHTML = `
+        <div class="file-icon ${iconClass(tipo)}">${tipo}</div>
+        <div class="file-info">
+          <div class="file-title">${escapeHtml(f.titulo)}</div>
+          <div class="file-meta">${formatSize(f.tamano || 0)} · ${formatDate(f.creado_en)}</div>
+        </div>
+        <div class="file-actions">
+          <a class="btn-open" href="${['HTML','HTM'].includes(tipo) ? '/view/'+f.id : f.url}" target="_blank">Abrir</a>
+          <button class="btn-delete" onclick="deleteFile('${f.id}', this)">Eliminar</button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  async function deleteFile(id, btn) {
+    if (!confirm('¿Eliminar este archivo?')) return;
+    btn.disabled = true;
+    const res = await fetch('/api/files/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (data.ok) loadFiles();
+    else alert('Error: ' + data.error);
+  }
+
+  // Auto-login si hay token guardado
+  if (token) {
+    fetch('/api/files').then(() => showMain()).catch(() => {});
+  }
+</script>
+</body>
+</html>
